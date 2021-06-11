@@ -1,5 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
+from selenium import webdriver
+from time import sleep
 
 ZILLOW_URL = "https://www.zillow.com/homes/for_rent/1-_beds/?searchQueryState=%7B%22pagination%22%3A%7B%7D%2C%22ma" \
              "pBounds%22%3A%7B%22west%22%3A-122.70526523779272%2C%22east%22%3A-122.3035776157224%2C%22south%22%3A37" \
@@ -60,6 +62,38 @@ def search_prieces():
     return preices_list
 
 
+def auto_fill(links, addresses, prices):
+    """
+               Auto fills google form with link, address and price of the found property.
+
+               :parameter links: list of links
+               :parameter addresses: list of addresses
+               :parameter prices: list of prices
+
+    """
+    driver_path = "D:\__DEV__\chromedriver.exe"
+    driver = webdriver.Chrome(driver_path)
+    driver.maximize_window()
+    driver.get(GOOGLE_FORM)
+
+    sleep(1)
+    for item in links:
+        index = links.index(item)
+        form_link = driver.find_element_by_xpath(
+            '//*[@id="mG61Hd"]/div[2]/div/div[2]/div[1]/div/div/div[2]/div/div[1]/div/div[1]/input')
+        form_link.send_keys(links[index])
+        form_address = driver.find_element_by_xpath(
+            '//*[@id="mG61Hd"]/div[2]/div/div[2]/div[2]/div/div/div[2]/div/div[1]/div/div[1]/input')
+        form_address.send_keys(addresses[index])
+        form_price = driver.find_element_by_xpath(
+            '//*[@id="mG61Hd"]/div[2]/div/div[2]/div[3]/div/div/div[2]/div/div[1]/div/div[1]/input')
+        form_price.send_keys(prices[index])
+        driver.find_element_by_xpath('//*[@id="mG61Hd"]/div[2]/div/div[3]/div[1]/div/div/span/span').click()
+        sleep(1)
+        driver.find_element_by_link_text("Prześlij kolejną odpowiedź").click()
+        sleep(2)
+
+
 # Needed to add header due to captcha
 headers = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472."
@@ -72,6 +106,8 @@ response = requests.get(url=ZILLOW_URL, headers=headers)
 zillow_website = response.text
 soup = BeautifulSoup(zillow_website, "html.parser")
 
-print(search_hrefs())
-print(search_adress())
-print(search_prieces())
+links_li = search_hrefs()
+addresses_li = search_adress()
+prices_li = search_prieces()
+
+auto_fill(links_li, addresses_li, prices_li)
